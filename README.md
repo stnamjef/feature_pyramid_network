@@ -10,7 +10,7 @@
 
 
 
-- 주제: Feature extractor 구조에 따른 object detector의 성능 차이 분석
+#### 주제: Feature extractor 구조에 따른 object detector의 성능 차이 분석
 
 
 
@@ -22,7 +22,7 @@
 
 
 
-![object_detection_types](img\object_detection_types.png)
+![object_detection_types](.img\object_detection_types.png)
 
 
 
