@@ -200,5 +200,45 @@ Faster R-CNN의 feature extractor 구조를 pyramidal feature hierarchy로 변�
 
 ## 5. Example
 
+- Train Faster R-CNN(Feature Pyramid Network)
 
+```python
+if __name__ == '__main__':
+    trainset = Dataset(opt)
+    train_loader = DataLoader(trainset, batch_size=1, shuffle=True, num_workers=2)
+
+    testset = TestDataset(opt)
+    test_loader = DataLoader(testset, batch_size=1, num_workers=2, shuffle=False, pin_memory=True)
+    print('data loaded')
+
+    model = FasterRCNN(n_fg_class=20, scales=[16 * 8, 16 * 16, 16 * 32], ratios=[0.5, 1, 2]).cuda()
+
+    best_map = 0
+    lr = 0.001
+    for epoch in range(20):
+        model.train()
+        model.reset_meters()
+        for i, (img, bbox, label, scale) in tqdm(enumerate(train_loader)):
+            scale = at.scalar(scale)
+            img, bbox, label = img.cuda().float(), bbox.cuda(), label.cuda()
+
+            model.optimizer.zero_grad()
+            losses = model.forward(img, scale, bbox, label)
+            losses.total_loss.backward()
+            model.optimizer.step()
+            model.update_meters(losses)
+
+        model.eval()
+        eval_result = eval(test_loader, model, test_num=opt.test_num)
+        log_info = f'lr: {str(lr)}, map: {str(eval_result["map"])}, loss: {str(model.get_meter_data())}'
+        print(log_info)
+
+        if eval_result['map'] > best_map:
+            best_map = eval_result['map']
+            best_path = save(model)
+        if epoch == 14:
+            state_dict = torch.load(best_path)
+            model.load_state_dict(state_dict)
+            lr = 0.0001
+```
 
