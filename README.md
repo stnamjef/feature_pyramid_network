@@ -22,7 +22,7 @@
 
 
 
-![object_detection_types](.img\object_detection_types.png)
+![object_detection_types](./img/object_detection_types.png)
 
 
 
@@ -44,7 +44,7 @@
 
 
 
-![wolf_features](img\wolf_features.png)
+![wolf_features](./img/wolf_features.png)
 
 
 
@@ -60,7 +60,7 @@
 
 
 
-![faster_rcnn](img\faster_rcnn.png)
+![faster_rcnn](./img/faster_rcnn.png)
 
 
 
@@ -68,7 +68,7 @@
 
 
 
-![fpn_without_lateral](img\fpn_without_lateral.png)
+![fpn_without_lateral](./img/fpn_without_lateral.png)
 
 
 
@@ -76,7 +76,7 @@
 
 
 
-![fpn](img\fpn.png)
+![fpn](./img/fpn.png)
 
 
 
@@ -146,7 +146,7 @@
 
 ### (1) Single feature
 
-![single_feature](.\img\single_feature.png)
+![single_feature](./img/single_feature.png)
 
 
 
@@ -156,7 +156,7 @@
 
 ### (2) Pyramidal feature hierarchy
 
-![pyramidal_feature_hierarchy](.\img\pyramidal_feature_hierarchy.png)
+![pyramidal_feature_hierarchy](./img/pyramidal_feature_hierarchy.png)
 
 
 
@@ -168,7 +168,7 @@
 
 
 
-![feature_pyramid_network](.\img\feature_pyramid_network.png)
+![feature_pyramid_network](./img/feature_pyramid_network.png)
 
 
 
