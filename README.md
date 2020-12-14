@@ -22,7 +22,7 @@
 
 
 
-![object_detection_types](.\img\object_detection_types.png)
+![object_detection_types](img\object_detection_types.png)
 
 
 
@@ -44,7 +44,7 @@
 
 
 
-![wolf_features](.\img\wolf_features.png)
+![wolf_features](img\wolf_features.png)
 
 
 
@@ -60,7 +60,7 @@
 
 
 
-![faster_rcnn](.\img\faster_rcnn.png)
+![faster_rcnn](img\faster_rcnn.png)
 
 
 
@@ -68,7 +68,7 @@
 
 
 
-![fpn_without_lateral](.\img\fpn_without_lateral.png)
+![fpn_without_lateral](img\fpn_without_lateral.png)
 
 
 
@@ -76,7 +76,7 @@
 
 
 
-![fpn](.\img\fpn.png)
+![fpn](img\fpn.png)
 
 
 
@@ -88,15 +88,15 @@
 
 
 
-| Model                           | proposals           | feature             | lateral? | top-down? | mAP      |
-| ------------------------------- | ------------------- | ------------------- | -------- | --------- | -------- |
-| (1) Single feature(baseline)    | $c_5$               | $c_5$               |          |           | 0.65     |
-| (2) Pyramidal feature hierarchy | $\{c_3, c_4, c_5\}$ | $\{c_3, c_4, c_5\}$ |          |           | 0.63     |
-| (3) Feature Pyramid Network     | $\{c_3, c_4, c_5\}$ | $\{c_3, c_4, c_5\}$ | O        | O         | **0.66** |
+| Model                           | proposals    | feature      | lateral? | top-down? | mAP      |
+| ------------------------------- | ------------ | ------------ | -------- | --------- | -------- |
+| (1) Single feature(baseline)    | C5           | C5           |          |           | 0.65     |
+| (2) Pyramidal feature hierarchy | {C3, C4, C5} | {C3, C4, C5} |          |           | 0.63     |
+| (3) Feature Pyramid Network     | {C3, C4, C5} | {C3, C4, C5} | O        | O         | **0.66** |
 
 
 
-위는 앞서 설명한 세 가지 모델의 mAP를 측정하고 그 결과를 정리한 표이다. 먼저  $\{c_3, c_4, c_5\}$ 는 각각 VGG-16의 세 번째, 네 번째, 그리고 다섯 번째 컨볼루션 층에서 생성한 feature라는 의미이다. 계속해서 proposal은 RPN(region proposal network)에서 사용하는 feature를 말한다. 예를 들어 proposal이 $c_5$면, 이 모델의 RPN은  $c_5$만을 사용하여 bounding-box regression과 classification을 한다. 다음으로 feature는 RoI를 pooling하는 데 사용하는 feature를 말한다. 예를 들어 이 값이 $c_5$면, 모든 roi는 $c_5$로부터 추출된다. 마지막으로 lateral과 top-down은 각각 그러한 구조를 채택했는지 여부를 나타낸다.
+위는 앞서 설명한 세 가지 모델의 mAP를 측정하고 그 결과를 정리한 표이다. 먼저  {C3, C4, C5}는 각각 VGG-16의 세 번째, 네 번째, 그리고 다섯 번째 컨볼루션 층에서 생성한 feature라는 의미이다. 계속해서 proposal은 RPN(region proposal network)에서 사용하는 feature를 말한다. 예를 들어 proposal이 C5면, 이 모델의 RPN은  C5만을 사용하여 bounding-box regression과 classification을 한다. 다음으로 feature는 RoI를 pooling하는 데 사용하는 feature를 말한다. 예를 들어 이 값이 C5면, 모든 roi는 C5로부터 추출된다. 마지막으로 lateral과 top-down은 각각 그러한 구조를 채택했는지 여부를 나타낸다.
 
 표에서 보듯이 (2)는 기존 모델보다 mAP가 약 0.02 정도 낮았다. 다양한 스케일의 feature를 사용하면 성능이 향상될 것이라 예상한 것과는 반대되는 결과였다. (3)은 기존 모델에 비해 mAP가 향상되었으나, 그 차이가 유의미하다고 할 만큼 크지 않았다. 이는 선행연구에서 Faster R-CNN에 (3)를 적용했을 때 기존의 모델보다 AP@0.5가 5.2 상승[3]했다는 사실에 부합하지 않는 결과였다. 물론 [3]에서 구성한 모델은 ResNet-50 기반에 COCO minival set으로 테스트 하였으나, 본 연구에서 구성한 모델은 VGG-16을 기반으로 하고 PASCAL VOC 2007 데이터를 사용했다는 점에서 차이가 있다.
 
@@ -106,33 +106,33 @@
 
 
 
-| Model                           | proposals           | feature | lateral? | top-down? | mAP      |
-| ------------------------------- | ------------------- | ------- | -------- | --------- | -------- |
-| (2) Pyramidal feature hierarchy | $\{c_3, c_4, c_5\}$ | $c_3$   |          |           | 0.04     |
-|                                 | $\{c_3, c_4, c_5\}$ | $c_4$   |          |           | 0.29     |
-|                                 | $\{c_3, c_4, c_5\}$ | $c_5$   |          |           | **0.60** |
-| (3) Feature Pyramid Network     | $\{c_3, c_4, c_5\}$ | $c_3$   | O        | O         | 0.17     |
-|                                 | $\{c_3, c_4, c_5\}$ | $c_4$   | O        | O         | 0.35     |
-|                                 | $\{c_3, c_4, c_5\}$ | $c_5$   | O        | O         | 0.61     |
+| Model                           | proposals    | feature | lateral? | top-down? | mAP      |
+| ------------------------------- | ------------ | ------- | -------- | --------- | -------- |
+| (2) Pyramidal feature hierarchy | {C3, C4, C5} | C3      |          |           | 0.04     |
+|                                 | {C3, C4, C5} | C4      |          |           | 0.29     |
+|                                 | {C3, C4, C5} | C5      |          |           | **0.60** |
+| (3) Feature Pyramid Network     | {C3, C4, C5} | C3      | O        | O         | 0.17     |
+|                                 | {C3, C4, C5} | C4      | O        | O         | 0.35     |
+|                                 | {C3, C4, C5} | C5      | O        | O         | 0.61     |
 
 
 
-위는 (2), (3)에 대해 roi-pooling하는 feature를 하나씩으로 고정하여 mAP를 측정한 결과이다. 예를 들어 첫 번째 행은 (2)를 사용하되 세 가지 feature $\{c_3, c_4, c_5\}$를 사용하여 proposal을 생성하고 그것을 $c_3$로부터만 roi-pooling한 결과를 나타낸다. 결과적으로 두 모델 모두 $c_5$에서 roi-pooling을 했을 때 mAP가 가장 높았다. 그 다음은 $c_4, c_5$순으로 수치가 높았다. 이는 $c_5$가 여러 층을 거쳐 생성된 feature인 만큼 semantic이 강해 객체 탐지나 분류에 유리하여 생긴 결과라고 추측할 수 있다.
+위는 (2), (3)에 대해 roi-pooling하는 feature를 하나씩으로 고정하여 mAP를 측정한 결과이다. 예를 들어 첫 번째 행은 (2)를 사용하되 세 가지 feature {C3, C4, C5}를 사용하여 proposal을 생성하고 그것을 C3로부터만 roi-pooling한 결과를 나타낸다. 결과적으로 두 모델 모두 C5에서 roi-pooling을 했을 때 mAP가 가장 높았다. 그 다음은 C4, C5순으로 수치가 높았다. 이는C5가 여러 층을 거쳐 생성된 feature인 만큼 semantic이 강해 객체 탐지나 분류에 유리하여 생긴 결과라고 추측할 수 있다.
 
-[3]은 이러한 high-level feature의 강한 semantic을 low-level feature도 갖게 하기 위해 lateral 및 top-down connection을 제안하였다. 구체적으로 high-level feature의 스케일을 키워서 low-level feature과 결합하는 식으로 새로운 feature를 생성하고, 이것으로 객체 탐지와 분류를 하는 방식이다. 위의 표에서 볼 수 있듯이 $c_3$ 또는 $c_4$만을 사용했을 때, (2)에 비해 (3)의 mAP가 유의미하게 높았다. 이는 lateral, top-down 구조가 모델의 성능 향상에 도움을 준 결과라고 해석할 수 있다. 
+[3]은 이러한 high-level feature의 강한 semantic을 low-level feature도 갖게 하기 위해 lateral 및 top-down connection을 제안하였다. 구체적으로 high-level feature의 스케일을 키워서 low-level feature과 결합하는 식으로 새로운 feature를 생성하고, 이것으로 객체 탐지와 분류를 하는 방식이다. 위의 표에서 볼 수 있듯이 C3 또는 C4만을 사용했을 때, (2)에 비해 (3)의 mAP가 유의미하게 높았다. 이는 lateral, top-down 구조가 모델의 성능 향상에 도움을 준 결과라고 해석할 수 있다. 
 
-그러나 (3)의 첫 번째, 두 번째 결과와 세 번째 결과가 지나치게 많이 차이난다는 점에서 모든 feature가 강한 semantic을 갖는다고 확신할 수는 없다. 이렇게 성능 차이가 나는 원인으로 모델의 head layer를 훈련시킬 때 $c_3, c_4$에서 얻은 feature보다 $c_5$에서 얻은 feature가 더 많이 입력되었던 점을 들 수 있다. 즉  $c_5$에 비해,  $c_3, c_4$에 대해서는 훈련이 덜 된 것이라 할 수 있다. 참고로 head layer는 네트워크의 가장 마지막 층에서 bounding box regression과 classification을 수행하는 두 개의 fully-connected layer를 말한다. 
+그러나 (3)의 첫 번째, 두 번째 결과와 세 번째 결과가 지나치게 많이 차이난다는 점에서 모든 feature가 강한 semantic을 갖는다고 확신할 수는 없다. 이렇게 성능 차이가 나는 원인으로 모델의 head layer를 훈련시킬 때 C3, C4에서 얻은 feature보다 C5에서 얻은 feature가 더 많이 입력되었던 점을 들 수 있다. 즉  C5에 비해,  C3, C4에 대해서는 훈련이 덜 된 것이라 할 수 있다. 참고로 head layer는 네트워크의 가장 마지막 층에서 bounding box regression과 classification을 수행하는 두 개의 fully-connected layer를 말한다. 
 
-이처럼 대다수의 proposal들이 $c_5$에서 roi-pooling된 이유는 (3)의 구조적 특성 때문이다. 기본적으로 (3)은 proposal의 크기를 기준으로 어느 feature에서 roi-pooling을 할지 결정한다. 구체적으로는 다음의 식 $k=\lfloor k_0 + log_2(\sqrt{wh}/224) \rfloor, (k_0=5)$에서 얻는 값이 기준이 된다. 예를 들어 proposal의 크기가 $224^2$이라면 $k=5$이기 때문에, 해당 proposal은 $c_5$에서 roi-pooling을 시행한다. 문제는 이렇게 계산한 값이 대부분 5가 되어, head layer에 입력되는 feature가 $c_5$로 편중된다는 것이다.
+이처럼 대다수의 proposal들이 C5에서 roi-pooling된 이유는 (3)의 구조적 특성 때문이다. 기본적으로 (3)은 proposal의 크기를 기준으로 어느 feature에서 roi-pooling을 할지 결정한다. 구체적으로는 다음의 식 $k=\lfloor k_0 + log_2(\sqrt{wh}/224) \rfloor, (k_0=5)$에서 얻는 값이 기준이 된다. 예를 들어 proposal의 크기가 224^2이라면 k = 5 이기 때문에, 해당 proposal은 C5에서 roi-pooling을 시행한다. 문제는 이렇게 계산한 값이 대부분 5가 되어, head layer에 입력되는 feature가 로 C5편중된다는 것이다.
 
-이에 따라 위의 식에서 $k_0=4$로 하여 $c_3, c_4$에서 roi-pooling이 되는 비중을 커지도록 변경한 후 모델을 다시 훈련시켰다. 아래의 표는 해당 모델을 평가한 결과이다. 우선 모델의 mAP가 0.66으로 $k_0=5$로 한 위의 모델과 성능이 비슷하였다. 그러나 feature를 하나로 고정시켜 roi-pooling을 한 세 개의 결과는 위의 모델보다 편차가 줄어든 것을 확인할 수 있었다.
+이에 따라 위의 식에서 K0 = 4로 하여 C3, C4에서 roi-pooling이 되는 비중을 커지도록 변경한 후 모델을 다시 훈련시켰다. 아래의 표는 해당 모델을 평가한 결과이다. 우선 모델의 mAP가 0.66으로 K0 = 5로 한 위의 모델과 성능이 비슷하였다. 그러나 feature를 하나로 고정시켜 roi-pooling을 한 세 개의 결과는 위의 모델보다 편차가 줄어든 것을 확인할 수 있었다.
 
-| Model                       | proposals           | feature             | lateral? | top-down? | mAP  |
-| --------------------------- | ------------------- | ------------------- | -------- | --------- | ---- |
-| (3) Feature Pyramid Network | $\{c_3, c_4, c_5\}$ | $\{c_3, c_4, c_5\}$ | O        | O         | 0.66 |
-|                             | $\{c_3, c_4, c_5\}$ | $c_3$               | O        | O         | 0.32 |
-|                             | $\{c_3, c_4, c_5\}$ | $c_4$               | O        | O         | 0.58 |
-|                             | $\{c_3, c_4, c_5\}$ | $c_5$               | O        | O         | 0.48 |
+| Model                       | proposals    | feature      | lateral? | top-down? | mAP  |
+| --------------------------- | ------------ | ------------ | -------- | --------- | ---- |
+| (3) Feature Pyramid Network | {C3, C4, C5} | {C3, C4, C5} | O        | O         | 0.66 |
+|                             | {C3, C4, C5} | C3           | O        | O         | 0.32 |
+|                             | {C3, C4, C5} | C4           | O        | O         | 0.58 |
+|                             | {C3, C4, C5} | C5           | O        | O         | 0.48 |
 
 
 
