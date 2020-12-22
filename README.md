@@ -118,7 +118,7 @@
 
 
 
-![table3](C:\Users\user\Desktop\source\feature_pyramid_network\img\table3.png)
+![table3](./img/table3.png)
 
 
 
@@ -194,7 +194,7 @@ Faster R-CNN의 feature extractor 구조를 pyramidal feature hierarchy로 변�
 
 [4] Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexender C. Berg. SSD: Single Shot MultiBox Detector. In *ECCV*. 2016.
 
-
+[5] Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi. You Only Look Once: Unified, Real-Time Object Detection. In *CVPR*. 2016.
 
 ## 5. Example
 
