@@ -196,6 +196,8 @@ Faster R-CNN의 feature extractor 구조를 pyramidal feature hierarchy로 변�
 
 [5] Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi. You Only Look Once: Unified, Real-Time Object Detection. In *CVPR*. 2016.
 
+
+
 ## 5. Example
 
 - Train Faster R-CNN(Feature Pyramid Network)
