@@ -29,7 +29,7 @@ class FPN(FasterRCNNBase):
                 rpn_score=nn.Conv2d(512, 3 * 2, 1, 1)
             ),
             top_layer=nn.Sequential(
-                nn.Linear(7 * 7 * 256, 1024),
+                nn.Linear(7 * 7 * 256 * opt.n_features, 1024),
                 nn.ReLU(True),
                 nn.Linear(1024, 1024),
                 nn.ReLU(True)
@@ -228,6 +228,6 @@ def compute_feature_level(roi, n_features, default_level, low, high):
         level[level < limit] = low
         level[level >= limit] = low + 1
     else:
-        raise ValueError('Invalid number of features.')
+        raise NotImplementedError('Not implemented yet.')
 
     return level
