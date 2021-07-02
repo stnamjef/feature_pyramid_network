@@ -13,7 +13,10 @@ def read_image(path, dtype=np.float32, color=True):
             img = f.convert('RGB')
         else:
             img = f.convert('P')
-        img = np.asarray(img, dtype=dtype)
+        # This code raises the error below, and I do not know why.
+        # TypeError: __array__() takes 1 positional argument but 2 were given
+        # img = np.asarray(img, dtype=dtype)
+        img = np.asarray(img).astype(dtype)
     finally:
         if hasattr(f, 'close'):
             f.close()
