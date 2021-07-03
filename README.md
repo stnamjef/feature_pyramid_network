@@ -3,7 +3,7 @@
 - Pytorch implementation of Feature Pyramid Network based on VGG16 and ResNet101.
 - Supports multi-scale RoI pooling.
 - This project is based on [simple-faster-rcnn-pytorch](https://github.com/chenyuntc/simple-faster-rcnn-pytorch/), [fpn.pytorch](https://github.com/jwyang/fpn.pytorch), and [bounding-box](https://github.com/nalepae/bounding-box).
-- A dockerized test environment is available.
+- [A dockerized test environment](https://hub.docker.com/repository/docker/stnamjef/pytorch-fpn) is available.
 
 ## 1. Introduction
 
@@ -11,7 +11,7 @@
 
 - Feature Pyramid Network based on VGG16.
   - The two fully connected layers, fc6 and fc7, are converted into convolutional layers as in SSD.
-  - The model uses four levels of features as shown in the image above.
+  - The model uses four levels of features (P3, P4, P5, P6) as shown in the image above.
   - Anchor scales are [64^2, 128^2, 256^2, 512^2], and aspect ratios are [0.5, 1, 2].
 - Multi-scale RoI pooling.
   - Original FPN pools RoI from single-level features. As shown in the upper right of the image, large-sized RoIs are pooled from small-scale features, while small-sized RoIs are pooled from large-scale features.
@@ -24,19 +24,20 @@
   - FPN+ is FPN with multi-scale RoI pooling adopted. 
   - Learning rate : 0.001 for the first 50k images, 0.0001 for the next 25k; input size: 600px, batch size: 1; weight decay: 0.0005; momentum: 0.9.
 
-|   Dataset   |    Model     |    AP     |  AP@0.5   |  AP@0.75  |   AP(s)   |   AP(m)   |   AP(l)   |
-| :---------: | :----------: | :-------: | :-------: | :-------: | :-------: | :-------: | :-------: |
-|   VOC 07    | Faster R-CNN |   35.10   |   69.85   |   30.71   |   4.59    |   20.77   |   38.62   |
-|   VOC 07    |     FPN      |   36.28   |   68.92   |   33.93   | **18.06** |   22.99   |   37.88   |
-|   VOC 07    |     FPN+     | **39.09** | **71.18** | **37.89** |   16.21   | **24.65** | **41.25** |
-| VOC 07 + 12 | Faster R-CNN |   42.73   |   75.12   |   42.49   |   7.79    |   26.47   |   46.50   |
-| VOC 07 + 12 |     FPN      |   43.69   |   75.43   |   44.79   | **18.32** |   28.99   |   45.49   |
-| VOC 07 + 12 |     FPN+     | **45.35** | **76.03** | **47.30** |   18.04   | **30.69** | **47.51** |
+| Training dataset |    Model     |    AP     |  AP@0.5   |  AP@0.75  |   AP(s)   |   AP(m)   |   AP(l)   |
+| :--------------: | :----------: | :-------: | :-------: | :-------: | :-------: | :-------: | :-------: |
+|      VOC 07      | Faster R-CNN |   35.10   |   69.85   |   30.71   |   4.59    |   20.77   |   38.62   |
+|      VOC 07      |     FPN      |   36.28   |   68.92   |   33.93   | **18.06** |   22.99   |   37.88   |
+|      VOC 07      |     FPN+     | **39.09** | **71.18** | **37.89** |   16.21   | **24.65** | **41.25** |
+|   VOC 07 + 12    | Faster R-CNN |   42.73   |   75.12   |   42.49   |   7.79    |   26.47   |   46.50   |
+|   VOC 07 + 12    |     FPN      |   43.69   |   75.43   |   44.79   | **18.32** |   28.99   |   45.49   |
+|   VOC 07 + 12    |     FPN+     | **45.35** | **76.03** | **47.30** |   18.04   | **30.69** | **47.51** |
 
 ## 3. Requirements
 
 - Python 3.8.0
 - Pytorch 1.7.1 (CUDA 10.2)
+- OpenCV
 - tqdm
 - torchnet
 - pycocotools
@@ -105,22 +106,17 @@ project
 
 **I will assume the current working directory is "project" as shown in the above code fence.**
 
-- Build the dockerfile.
+- Build the dockerfile (Skip this part if you want to use the pre-built docker image).
 
 ```shell
-# move to ./feature_pyramid_network
-cd ./feature_pyramid_network
-# do not forget to include the period at the end
-docker build -t pytorch-fpn .
+docker build -t stnamjef/pytorch-fpn:1.0 ./feature_pyramid_network
 ```
 
 - Run the docker image.
 
 ```shell
-# move to the parent directory
-cd ../
 # run the docker image
-docker run -it -v $(pwd):/workspace --gpus all --ipc host pytorch-fpn
+docker run -it -v $(pwd):/workspace --gpus all --ipc host stnamjef/pytorch-fpn:1.0
 ```
 
 ### 4.3. Train models
