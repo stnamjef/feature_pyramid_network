@@ -17,20 +17,11 @@ class VOCDataset(Dataset):
         self.use_difficult = use_difficult
 
         if self.transform_mode == 'train':
-            self.transforms = TransformsTrain(
-                min_size=opt.min_size,
-                max_size=opt.max_size
-            )
+            self.transforms = TransformsTrain(opt.min_size, opt.max_size)
         elif self.transform_mode == 'test':
-            self.transforms = TransformsTest(
-                min_size=opt.min_size,
-                max_size=opt.max_size
-            )
+            self.transforms = TransformsTest(opt.min_size, opt.max_size)
         elif self.transform_mode == 'plot':
-            self.transforms = TransformsPlot(
-                min_size=opt.min_size,
-                max_size=opt.max_size
-            )
+            self.transforms = TransformsPlot(opt.min_size, opt.max_size)
         else:
             raise ValueError('Invalid dataset mode.')
 
@@ -39,9 +30,6 @@ class VOCDataset(Dataset):
 
     def __getitem__(self, i):
         img, bbox, label, difficult = self._load_image_and_target(i)
-
-        original_size = img.shape[1:]
-
         return self.transforms(img, bbox, label, difficult)
 
     def _load_image_and_target(self, i):

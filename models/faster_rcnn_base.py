@@ -6,6 +6,7 @@ import torchvision as tv
 import utils.array_tool as at
 from models.utils.bbox_tools import loc2bbox
 from collections import namedtuple
+from utils.config import opt
 
 LossTuple = namedtuple('LossTuple',
                        ['rpn_loc_loss',
@@ -33,9 +34,8 @@ class FasterRCNNBase(nn.Module):
         # variables for eval mode
         self.loc_normalize_mean = (0., 0., 0., 0.)
         self.loc_normalize_std = (0.1, 0.1, 0.2, 0.2)
-        self.nms_thresh = 0.3
-        self.score_thresh = 0.05
-        # self.score_thresh = 0.6
+        self.nms_thresh = opt.nms_thresh
+        self.score_thresh = opt.score_thresh
 
     def forward(self, x, scale, gt_bboxes, gt_labels, original_size=None):
         if self.training:

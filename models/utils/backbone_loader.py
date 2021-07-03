@@ -14,9 +14,8 @@ def load_vgg16(pretrained=True):
     features = nn.Sequential(*features)
 
     top_layer = list(model.classifier)[:6]
-    if not opt.use_drop:
-        del top_layer[5]
-        del top_layer[2]
+    del top_layer[5]
+    del top_layer[2]
     top_layer = nn.Sequential(*top_layer)
 
     return features, top_layer
