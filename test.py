@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     if opt.dataset == 'voc07':
         n_fg_class = 20
-        test_data = VOCDataset(opt.data_dir + '/VOCdevkit/VOC2007', 'test', 'test', True)
+        test_data = VOCDataset(opt.data_dir + '/VOC2007', 'test', 'test', True)
     elif opt.dataset == 'coco':
         n_fg_class = 80
         test_data = COCODataset(opt.data_dir + '/COCO', 'val', 'test')

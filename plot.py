@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--nms_thresh', type=int, default=0.3,
                         help='IoU threshold for NMS (default=0.3).')
     parser.add_argument('--score_thresh', type=int, default=0.6,
-                        help='BBoxes with scores less than this are excluded (default=0.6).')
+                        help='BBoxes with scores less than this are excluded (default=0.05).')
     parser.add_argument('--n_plots', type=int, default=-1,
                         help='The number of images to plot predictions (default=-1; all images).')
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     if opt.dataset == 'voc07':
         n_fg_class = 20
-        test_data = VOCDataset(opt.data_dir + '/VOCdevkit/VOC2007', 'test', 'plot')
+        test_data = VOCDataset(opt.data_dir + '/VOC2007', 'test', 'plot')
     elif opt.dataset == 'coco':
         n_fg_class = 80
         test_data = COCODataset(opt.data_dir + '/COCO', 'val', 'plot')

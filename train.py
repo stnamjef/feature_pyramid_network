@@ -97,13 +97,13 @@ if __name__ == '__main__':
 
     if opt.dataset == 'voc07':
         n_fg_class = 20
-        train_data = [VOCDataset(opt.data_dir + '/VOCdevkit/VOC2007', 'trainval', 'train')]
-        test_data = VOCDataset(opt.data_dir + '/VOCdevkit/VOC2007', 'test', 'test', True)
+        train_data = [VOCDataset(opt.data_dir + '/VOC2007', 'trainval', 'train')]
+        test_data = VOCDataset(opt.data_dir + '/VOC2007', 'test', 'test', True)
     elif opt.dataset == 'voc0712':
         n_fg_class = 20
-        train_data = [VOCDataset(opt.data_dir + '/VOCdevkit/VOC2007', 'trainval', 'train'),
-                      VOCDataset(opt.data_dir + '/VOCdevkit/VOC2012', 'trainval', 'train')]
-        test_data = VOCDataset(opt.data_dir + '/VOCdevkit/VOC2007', 'test', 'test', True)
+        train_data = [VOCDataset(opt.data_dir + '/VOC2007', 'trainval', 'train'),
+                      VOCDataset(opt.data_dir + '/VOC2012', 'trainval', 'train')]
+        test_data = VOCDataset(opt.data_dir + '/VOC2007', 'test', 'test', True)
     elif opt.dataset == 'coco':
         n_fg_class = 80
         train_data = [COCODataset(opt.data_dir + '/COCO', 'train', 'train')]
