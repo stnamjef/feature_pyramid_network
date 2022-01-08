@@ -1,14 +1,61 @@
 from __future__ import division
+import os
+import json
 from tqdm import tqdm
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import itertools
 import numpy as np
 import six
 import utils.array_tool as at
 from models.utils.bbox_tools import bbox_iou
+from utils.config import opt
 
 
-def evaluate(data_loader, model):
+class COCOEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(COCOEncoder, self).default(obj)
+
+
+def evaluate_coco(data, data_loader, model):
+    n_ids = len(data.img_ids)
+    result = []
+
+    for i, (img, bbox, label, scale, size, _) in tqdm(zip(data.img_ids, data_loader), total=n_ids):
+        scale = at.scalar(scale)
+        original_size = [size[0][0].item(), size[1][0].item()]
+        pred_bbox, pred_label, pred_score = model(img, scale, None, None, original_size)
+
+        for b, l, s in zip(pred_bbox, pred_label, pred_score):
+            ymin, xmin, ymax, xmax = b
+            obj = OrderedDict({
+                'image_id': i,
+                'category_id': data.label_to_coco_label(l),
+                'bbox': [xmin, ymin, xmax - xmin, ymax - ymin],
+                'score': float(s)
+            })
+            result.append(obj)
+
+    result_path = f'./results/coco/predictions/{opt.model}.json'
+    result_dir = os.path.dirname(result_path)
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+
+    with open(result_path, 'w', encoding='utf-8') as fout:
+        json.dump(result, fout, cls=COCOEncoder, ensure_ascii=False)
+
+    eval_result = data.evaluate(result_path)
+
+    return eval_result
+
+
+def evaluate_voc(data_loader, model):
     pred_bboxes, pred_labels, pred_scores = [], [], []
     gt_bboxes, gt_labels, gt_difficults = [], [], []
 
@@ -23,153 +70,73 @@ def evaluate(data_loader, model):
         pred_labels += [pred_label]
         pred_scores += [pred_score]
 
-    result = eval_detection_voc(
-        pred_bboxes, pred_labels, pred_scores,
-        gt_bboxes, gt_labels, gt_difficults,
-        use_07_metric=True
-    )
+    eval_results = {'AP': 0, 'AP_0.5': 0, 'AP_0.75': 0, 'AP_s': 0, 'AP_m': 0, 'AP_l': 0}
+    iou_threshes = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
-    return result
+    area_names = ['s', 'm', 'l']
+    area_ranges = [(0, 32 ** 2), (32 ** 2, 96 ** 2), (96 ** 2, np.inf)]
+    for name, range in zip(area_names, area_ranges):
+        # evaluate predictions for multiple iou threshes
+        for iou_thresh in iou_threshes:
+            result = eval_detection_voc(
+                pred_bboxes, pred_labels, pred_scores,
+                gt_bboxes, gt_labels, gt_difficults,
+                iou_thresh, True, range
+            )
+            # accumulate results
+            eval_results[f'AP_{name}'] += result['map']
+        # average results
+        eval_results[f'AP_{name}'] /= 10.
+
+    # evaluate results regardless of area size
+    for iou_thresh in iou_threshes:
+        result = eval_detection_voc(
+            pred_bboxes, pred_labels, pred_scores,
+            gt_bboxes, gt_labels, gt_difficults,
+            iou_thresh, True
+        )
+        # accumulate results
+        eval_results['AP'] += result['map']
+        # save map for iou 0.5 & 0.75
+        if iou_thresh == 0.5:
+            eval_results['AP_0.5'] = result['map']
+        elif iou_thresh == 0.75:
+            eval_results['AP_0.75'] = result['map']
+        else:
+            continue
+    eval_results['AP'] /= 10
+
+    # print results
+    eval_log = ''
+    for k, v in eval_results.items():
+        eval_log += f'{k}: {v * 100:.2f},  '
+    print(eval_log)
+
+    return eval_results['AP']
 
 
-def eval_detection_voc(
-        pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels,
-        gt_difficults=None,
-        iou_thresh=0.5, use_07_metric=False):
-    """Calculate average precisions based on evaluation code of PASCAL VOC.
-
-    This function evaluates predicted bounding boxes obtained from a dataset
-    which has :math:`N` images by using average precision for each class.
-    The code is based on the evaluation code used in PASCAL VOC Challenge.
-
-    Args:
-        pred_bboxes (iterable of numpy.ndarray): An iterable of :math:`N`
-            sets of bounding boxes.
-            Its index corresponds to an index for the base dataset.
-            Each element of :obj:`pred_bboxes` is a set of coordinates
-            of bounding boxes. This is an array whose shape is :math:`(R, 4)`,
-            where :math:`R` corresponds
-            to the number of bounding boxes, which may vary among boxes.
-            The second axis corresponds to
-            :math:`y_{min}, x_{min}, y_{max}, x_{max}` of a bounding box.
-        pred_labels (iterable of numpy.ndarray): An iterable of labels.
-            Similar to :obj:`pred_bboxes`, its index corresponds to an
-            index for the base dataset. Its length is :math:`N`.
-        pred_scores (iterable of numpy.ndarray): An iterable of confidence
-            scores for predicted bounding boxes. Similar to :obj:`pred_bboxes`,
-            its index corresponds to an index for the base dataset.
-            Its length is :math:`N`.
-        gt_bboxes (iterable of numpy.ndarray): An iterable of ground truth
-            bounding boxes
-            whose length is :math:`N`. An element of :obj:`gt_bboxes` is a
-            bounding box whose shape is :math:`(R, 4)`. Note that the number of
-            bounding boxes in each image does not need to be same as the number
-            of corresponding predicted boxes.
-        gt_labels (iterable of numpy.ndarray): An iterable of ground truth
-            labels which are organized similarly to :obj:`gt_bboxes`.
-        gt_difficults (iterable of numpy.ndarray): An iterable of boolean
-            arrays which is organized similarly to :obj:`gt_bboxes`.
-            This tells whether the
-            corresponding ground truth bounding box is difficult or not.
-            By default, this is :obj:`None`. In that case, this function
-            considers all bounding boxes to be not difficult.
-        iou_thresh (float): A prediction is correct if its Intersection over
-            Union with the ground truth is above this value.
-        use_07_metric (bool): Whether to use PASCAL VOC 2007 evaluation metric
-            for calculating average precision. The default value is
-            :obj:`False`.
-
-    Returns:
-        dict:
-
-        The keys, value-types and the description of the values are listed
-        below.
-
-        * **ap** (*numpy.ndarray*): An array of average precisions. \
-            The :math:`l`-th value corresponds to the average precision \
-            for class :math:`l`. If class :math:`l` does not exist in \
-            either :obj:`pred_labels` or :obj:`gt_labels`, the corresponding \
-            value is set to :obj:`numpy.nan`.
-        * **map** (*float*): The average of Average Precisions over classes.
-
-    """
+def eval_detection_voc(pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels,
+        gt_difficults=None, iou_thresh=0.5, use_07_metric=False, area_range=None):
 
     prec, rec = calc_detection_voc_prec_rec(
         pred_bboxes, pred_labels, pred_scores,
         gt_bboxes, gt_labels, gt_difficults,
-        iou_thresh=iou_thresh)
+        iou_thresh, area_range)
 
     ap = calc_detection_voc_ap(prec, rec, use_07_metric=use_07_metric)
 
     return {'ap': ap, 'map': np.nanmean(ap)}
 
 
-def calc_detection_voc_prec_rec(
-        pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels,
-        gt_difficults=None,
-        iou_thresh=0.5):
-    """Calculate precision and recall based on evaluation code of PASCAL VOC.
-
-    This function calculates precision and recall of
-    predicted bounding boxes obtained from a dataset which has :math:`N`
-    images.
-    The code is based on the evaluation code used in PASCAL VOC Challenge.
-
-    Args:
-        pred_bboxes (iterable of numpy.ndarray): An iterable of :math:`N`
-            sets of bounding boxes.
-            Its index corresponds to an index for the base dataset.
-            Each element of :obj:`pred_bboxes` is a set of coordinates
-            of bounding boxes. This is an array whose shape is :math:`(R, 4)`,
-            where :math:`R` corresponds
-            to the number of bounding boxes, which may vary among boxes.
-            The second axis corresponds to
-            :math:`y_{min}, x_{min}, y_{max}, x_{max}` of a bounding box.
-        pred_labels (iterable of numpy.ndarray): An iterable of labels.
-            Similar to :obj:`pred_bboxes`, its index corresponds to an
-            index for the base dataset. Its length is :math:`N`.
-        pred_scores (iterable of numpy.ndarray): An iterable of confidence
-            scores for predicted bounding boxes. Similar to :obj:`pred_bboxes`,
-            its index corresponds to an index for the base dataset.
-            Its length is :math:`N`.
-        gt_bboxes (iterable of numpy.ndarray): An iterable of ground truth
-            bounding boxes
-            whose length is :math:`N`. An element of :obj:`gt_bboxes` is a
-            bounding box whose shape is :math:`(R, 4)`. Note that the number of
-            bounding boxes in each image does not need to be same as the number
-            of corresponding predicted boxes.
-        gt_labels (iterable of numpy.ndarray): An iterable of ground truth
-            labels which are organized similarly to :obj:`gt_bboxes`.
-        gt_difficults (iterable of numpy.ndarray): An iterable of boolean
-            arrays which is organized similarly to :obj:`gt_bboxes`.
-            This tells whether the
-            corresponding ground truth bounding box is difficult or not.
-            By default, this is :obj:`None`. In that case, this function
-            considers all bounding boxes to be not difficult.
-        iou_thresh (float): A prediction is correct if its Intersection over
-            Union with the ground truth is above this value..
-
-    Returns:
-        tuple of two lists:
-        This function returns two lists: :obj:`prec` and :obj:`rec`.
-
-        * :obj:`prec`: A list of arrays. :obj:`prec[l]` is precision \
-            for class :math:`l`. If class :math:`l` does not exist in \
-            either :obj:`pred_labels` or :obj:`gt_labels`, :obj:`prec[l]` is \
-            set to :obj:`None`.
-        * :obj:`rec`: A list of arrays. :obj:`rec[l]` is recall \
-            for class :math:`l`. If class :math:`l` that is not marked as \
-            difficult does not exist in \
-            :obj:`gt_labels`, :obj:`rec[l]` is \
-            set to :obj:`None`.
-
-    """
+def calc_detection_voc_prec_rec(pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels,
+                                gt_difficults=None, iou_thresh=0.5, area_range=None):
 
     pred_bboxes = iter(pred_bboxes)
     pred_labels = iter(pred_labels)
     pred_scores = iter(pred_scores)
     gt_bboxes = iter(gt_bboxes)
     gt_labels = iter(gt_labels)
+
     if gt_difficults is None:
         gt_difficults = itertools.repeat(None)
     else:
@@ -179,10 +146,9 @@ def calc_detection_voc_prec_rec(
     score = defaultdict(list)
     match = defaultdict(list)
 
-    for pred_bbox, pred_label, pred_score, gt_bbox, gt_label, gt_difficult in \
-            six.moves.zip(
-                pred_bboxes, pred_labels, pred_scores,
-                gt_bboxes, gt_labels, gt_difficults):
+    for pred_bbox, pred_label, pred_score, gt_bbox, gt_label, gt_difficult in zip(
+            pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels, gt_difficults
+    ):
 
         if gt_difficult is None:
             gt_difficult = np.zeros(gt_bbox.shape[0], dtype=bool)
@@ -201,11 +167,23 @@ def calc_detection_voc_prec_rec(
             gt_bbox_l = gt_bbox[gt_mask_l]
             gt_difficult_l = gt_difficult[gt_mask_l]
 
-            n_pos[l] += np.logical_not(gt_difficult_l).sum()
+            # generate ignore gt list by area_range
+            def _is_ignore(bb):
+                if area_range is None:
+                    return False
+                area = (bb[2] - bb[0]) * (bb[3] - bb[1])
+                return not (area_range[0] <= area <= area_range[1])
+
+            gt_ignore = [_is_ignore(bb) for bb in gt_bbox_l]
+
             score[l].extend(pred_score_l)
+            for difficult, ignore in zip(gt_difficult_l, gt_ignore):
+                if not difficult and not ignore:
+                    n_pos[l] += 1
 
             if len(pred_bbox_l) == 0:
                 continue
+
             if len(gt_bbox_l) == 0:
                 match[l].extend((0,) * pred_bbox_l.shape[0])
                 continue
@@ -216,29 +194,62 @@ def calc_detection_voc_prec_rec(
             gt_bbox_l = gt_bbox_l.copy()
             gt_bbox_l[:, 2:] += 1
 
-            iou = bbox_iou(pred_bbox_l, gt_bbox_l)
-            gt_index = iou.argmax(axis=1)
-            # set -1 if there is no matching ground truth
-            gt_index[iou.max(axis=1) < iou_thresh] = -1
-            del iou
+            ious = bbox_iou(pred_bbox_l, gt_bbox_l)
 
-            selec = np.zeros(gt_bbox_l.shape[0], dtype=bool)
-            for gt_idx in gt_index:
-                if gt_idx >= 0:
-                    if gt_difficult_l[gt_idx]:
-                        match[l].append(-1)
-                    else:
-                        if not selec[gt_idx]:
-                            match[l].append(1)
-                        else:
-                            match[l].append(0)
-                    selec[gt_idx] = True
+            # sort gt_bbox by ignore list
+            gt_sort = np.argsort(gt_ignore, kind='stable')
+            gt_bbo_lx = [gt_bbox_l[i] for i in gt_sort]
+            gt_ignore = [gt_ignore[i] for i in gt_sort]
+            ious = ious[:, gt_sort]
+
+            gtm = {}
+            dtm = {}
+
+            for d_idx, d in enumerate(pred_bbox_l):
+                # information about best match so far (m=-1 -> unmatched)
+                iou = min(iou_thresh, 1 - 1e-10)
+                m = -1
+                for g_idx, g in enumerate(gt_bbox_l):
+                    # if this gt already matched, continue
+                    if g_idx in gtm:
+                        continue
+                    # if dt matched to reg gt, and on ignore gt, stop
+                    if m > -1 and gt_ignore[m] == False and gt_ignore[g_idx] == True:
+                        break
+                    # continue to next gt unless better match made
+                    if ious[d_idx, g_idx] < iou:
+                        continue
+                    # if match successful and best so far, store appropriately
+                    iou = ious[d_idx, g_idx]
+                    m = g_idx
+                # if match made store id of match for both dt and gt
+                if m == -1:
+                    continue
+                dtm[d_idx] = m
+                gtm[m] = d_idx
+
+            # generate ignore list for dts
+            dt_ignore = []
+            for d_idx, d in enumerate(pred_bbox_l):
+                if d_idx in dtm:
+                    dt_ignore.append(gt_ignore[dtm[d_idx]])
                 else:
-                    match[l].append(0)
+                    dt_ignore.append(_is_ignore(d))
 
-    for iter_ in (
-            pred_bboxes, pred_labels, pred_scores,
-            gt_bboxes, gt_labels, gt_difficults):
+            for d_idx in range(len(pred_bbox_l)):
+                if not dt_ignore[d_idx]:
+                    if d_idx in dtm:
+                        if gt_difficult_l[dtm[d_idx]]:
+                            match[l].append(-1)
+                        else:
+                            match[l].append(1)
+                    else:
+                        match[l].append(0)
+                else:
+                    match[l].append(-1)
+
+    for iter_ in (pred_bboxes, pred_labels, pred_scores,
+                  gt_bboxes, gt_labels, gt_difficults):
         if next(iter_, None) is not None:
             raise ValueError('Length of input iterables need to be same.')
 
