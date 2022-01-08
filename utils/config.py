@@ -10,9 +10,10 @@ class Config:
     model = 'fpn'
     backbone = 'vgg16'
     n_features = 1
-    pretrained_dir = './model_zoo'
+    save_dir = './model_zoo'
 
     # dataset
+    dataset = 'voc07'
     data_dir = './'
     min_size = 600   # image resize
     max_size = 1000  # image resize
@@ -33,9 +34,12 @@ class Config:
     lr_decay = 0.1  # 1e-3 -> 1e-4
     lr = 1e-3
 
-    # training
+    # epochs
     epoch = 15
     epoch_decay = 10
+
+    # param for plotting
+    n_plots = -1
 
     def _parse(self, kwargs):
         state_dict = self._state_dict()
